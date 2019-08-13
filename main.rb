@@ -6,7 +6,7 @@ require "fileutils"
 require "json"
 
 begin
-  $config = JSON.load(File.read("palette.json"))
+  $config = JSON.load(File.read("./palette.json"))
 rescue
   data = {
     train: {
@@ -19,7 +19,7 @@ rescue
       x_split: 4, y_split: 4,
     },
   }
-  File.open("palette.json", "w") { |f|
+  File.open("./palette.json", "w") { |f|
     f << JSON.pretty_generate(data)
   }
   puts "Please change configs in palette.json"
@@ -161,25 +161,34 @@ red, green = $config["train"]["from"], $config["train"]["to"]
 red_4x4, green_4x4 = $config["convert"]["from"], $config["convert"]["to"]
 x_split, y_split = $config["convert"]["x_split"], $config["convert"]["y_split"]
 
-puts "Start Train..."
-t = Time.now
-cluster_center, cluster_points = train(red, green)
-image = ChunkyPNG::Image.from_file(red_4x4)
-w, h = image.width / x_split, image.height / y_split
-new_image = ChunkyPNG::Image.new(image.width, image.height)
+begin
+  trap("INT") {
+    print "\nRetry."
+    raise "INTERACT"
+  }
 
-puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
+  puts "Start Train..."
+  t = Time.now
+  cluster_center, cluster_points = train(red, green)
+  image = ChunkyPNG::Image.from_file(red_4x4)
+  w, h = image.width / x_split, image.height / y_split
+  new_image = ChunkyPNG::Image.new(image.width, image.height)
 
-puts "Start convert image..."
-t = Time.now
-for i in 0...x_split
-  for j in 0...y_split
-    print "\e[100DConvert slice #{i * y_split + j + 1} / #{x_split * y_split}..."
-    img = image.crop(i * w, j * h, w, h)
-    convert!(img, cluster_center, cluster_points)
-    new_image.compose!(img, i * w, j * h)
-    new_image.save(green_4x4)
+  puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
+
+  puts "Start convert image..."
+  t = Time.now
+  for i in 0...x_split
+    for j in 0...y_split
+      print "\e[100DConvert slice #{i * y_split + j + 1} / #{x_split * y_split}..."
+      img = image.crop(i * w, j * h, w, h)
+      convert!(img, cluster_center, cluster_points)
+      new_image.compose!(img, i * w, j * h)
+      new_image.save(green_4x4)
+    end
   end
+  puts "\e[100DConvert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
+  puts "Save to #{green_4x4}."
+rescue Exception => e
+  retry if e.message == "INTERACT"
 end
-puts "\e[100DConvert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
-puts "Save to #{green_4x4}."

@@ -1,0 +1,23 @@
+{
+  "train": {
+    "from": "red.png",
+    "to": "green.png",
+    "cluster": "cluster.png",
+    "episodes": 10,
+    "max_cluster_number": 6,
+    "weights": {
+      "x": 0.03,
+      "y": 0.3,
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "a": 0.0
+    }
+  },
+  "convert": {
+    "from": "red_4x4.png",
+    "to": "green_4x4.png",
+    "x_split": 4,
+    "y_split": 4
+  }
+}

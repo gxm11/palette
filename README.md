@@ -2,11 +2,15 @@
 利用聚类进行图片之间的迁移，方便快速对 RM 的图块进行调色。
 
 程序由 ocra 打包成 exe 可执行文件。
+```
+ocra --no-autoload --output palette.exe main.rb
+```
 
 # How to use
 请下载 palette.exe，双击执行。
 1. 若同目录下没有配置文件`palette.json`，程序会创建此文件并退出。
 2. 若配置文件`palette.json`已经存在，程序会根据配置开始迁移图片。
+3. 在运行过程中，每处理一份子图，都会保存到硬盘上，方便随时查看。
 
 # Config
 ## train

@@ -6,7 +6,9 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "ocra --output palette.exe main.rb",
+            "command": [
+                "del palette.json && ocra --output palette.exe main.rb && palette"
+            ],
             "problemMatcher": []
         }
     ]

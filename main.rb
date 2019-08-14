@@ -28,9 +28,9 @@ end
 
 module Generator
   # Tuning Constants
-  Feature_Weights = Matrix.diagonal(*("xyrgba".split("").collect { |k|
+  Feature_Weights = "xyrgba".split("").collect { |k|
     $config["train"]["weights"][k]
-  }))
+  }
 
   Max_Cluster_Number = $config["train"]["max_cluster_number"]
   Train_Episodes = $config["train"]["episodes"]
@@ -40,7 +40,7 @@ module Generator
 
   module_function
 
-  def train(red, green, draw = true)
+  def train(red, green)
     @red = ChunkyPNG::Image.from_file(red)
     @green = ChunkyPNG::Image.from_file(green)
     w, h = @red.width, @red.height
@@ -51,13 +51,14 @@ module Generator
       cluster_center = find_next_cluster(m_red, cluster_index)
     end
     cluster_index = find_cluster_index(m_red, cluster_center)
-    if draw
+    if $config["train"]["cluster"]
       draw_cluster_images(cluster_index, $config["train"]["cluster"])
     end
+    # cluster points is a hash: { c_index => matrix }
     cluster_points = {}
     cluster_index.column(0).to_a.each_with_index { |v, index|
-      cluster_points[v] ||= []
-      cluster_points[v].push([[index % w, index / w], m_red.row(index)])
+      cluster_points[v] ||= Matrix.empty(0, Feature_Number)
+      cluster_points[v] = cluster_points[v].vstack(m_red.row(index).to_matrix.t)
     }
     return [cluster_center, cluster_points]
   end
@@ -101,7 +102,7 @@ module Generator
 
   def feature_distance(v1, v2)
     d = v1 - v2
-    (d.to_matrix.t * Feature_Weights * d)[0]
+    d.to_a.zip(Feature_Weights).collect { |a, b| a * a * b }.sum
   end
 
   def find_cluster_index(m_points, cluster_center = nil)
@@ -140,16 +141,20 @@ module Generator
   def convert!(img, cluster_center, cluster_points)
     w, h = img.width, img.height
     m = img2matrix(img)
+    m_red_vectors = img2matrix(@red).row_vectors
     cluster_index = find_cluster_index(m, cluster_center)
     for x in 0...w
       for y in 0...h
         next if img[x, y] & 255 == 0
         j = x + y * w
+        v = m.row(j)
         c_index = cluster_index[j, 0]
-        nn = cluster_points[c_index].min_by { |pos, point|
-          feature_distance(point, m.row(j))
+        neighbors = cluster_points[c_index]
+        nn = neighbors.row_vectors.min_by { |u|
+          feature_distance(u, v)
         }
-        img[x, y] = @green[nn[0][0], nn[0][1]]
+        pos = m_red_vectors.index(nn)
+        img[x, y] = @green[pos % @red.width, pos / @red.width]
       end
     end
     img
@@ -164,6 +169,7 @@ x_split, y_split = $config["convert"]["x_split"], $config["convert"]["y_split"]
 puts "Start Train..."
 t = Time.now
 cluster_center, cluster_points = train(red, green)
+
 image = ChunkyPNG::Image.from_file(red_4x4)
 w, h = image.width / x_split, image.height / y_split
 new_image = ChunkyPNG::Image.new(image.width, image.height)

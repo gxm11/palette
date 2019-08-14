@@ -154,7 +154,9 @@ module Generator
           feature_distance(u, v)
         }
         pos = red_vectors.index(nn)
-        img[x, y] = @green[pos % @red.width, pos / @red.width]
+        color = @green[pos % @red.width, pos / @red.width]
+        next if color & 255 == 0
+        img[x, y] = color
       end
     end
     img
@@ -182,7 +184,7 @@ begin
   puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
 
   puts "Start convert image..."
-  threads = $config["convert"]["threads"]
+  threads = $config["convert"]["threads"] || 4
   puts "Work in #{threads} threads."
   t = Time.now
   imgs = Parallel.map((x_split * y_split).times.to_a, in_threads: threads) do |k|

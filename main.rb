@@ -181,14 +181,14 @@ begin
 
   puts "Start convert image..."
   t = Time.now
-  for i in 0...x_split
-    for j in 0...y_split
-      print "\e[100DConvert slice #{i * y_split + j + 1} / #{x_split * y_split}..."
-      img = image.crop(i * w, j * h, w, h)
-      convert!(img, cluster_center, cluster_points)
-      new_image.compose!(img, i * w, j * h)
-      new_image.save(green_4x4)
-    end
+  for k in 0...(x_split * y_split)
+    i = k / y_split
+    j = k % y_split
+    print "\e[100DConvert slice #{i * y_split + j + 1} / #{x_split * y_split}..."
+    img = image.crop(i * w, j * h, w, h)
+    convert!(img, cluster_center, cluster_points)
+    new_image.compose!(img, i * w, j * h)
+    new_image.save(green_4x4)
   end
   puts "\e[100DConvert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
   puts "Save to #{green_4x4}."

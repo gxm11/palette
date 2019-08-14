@@ -6,12 +6,8 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "ocra --output palette.exe main.rb"
-        },
-        {
-            "label": "run",
-            "type": "shell",
-            "command": "ruby main.rb"
+            "command": "ocra --output palette.exe main.rb",
+            "problemMatcher": []
         }
     ]
 }

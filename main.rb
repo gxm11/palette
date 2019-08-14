@@ -54,11 +54,11 @@ module Generator
     if $config["train"]["cluster"]
       draw_cluster_images(cluster_index, $config["train"]["cluster"])
     end
-    # cluster points is a hash: { c_index => matrix }
+    # cluster points is a hash: { c_index => array of vectors }
     cluster_points = {}
     cluster_index.column(0).to_a.each_with_index { |v, index|
-      cluster_points[v] ||= Matrix.empty(0, Feature_Number)
-      cluster_points[v] = cluster_points[v].vstack(m_red.row(index).to_matrix.t)
+      cluster_points[v] ||= []
+      cluster_points[v] << m_red.row(index)
     }
     return [cluster_center, cluster_points]
   end
@@ -101,8 +101,7 @@ module Generator
   end
 
   def feature_distance(v1, v2)
-    d = v1 - v2
-    d.to_a.zip(Feature_Weights).collect { |a, b| a * a * b }.sum
+    (v1 - v2).zip(Feature_Weights).sum { |a, b| a * a * b }
   end
 
   def find_cluster_index(m_points, cluster_center = nil)
@@ -141,7 +140,7 @@ module Generator
   def convert!(img, cluster_center, cluster_points)
     w, h = img.width, img.height
     m = img2matrix(img)
-    m_red_vectors = img2matrix(@red).row_vectors
+    red_vectors = img2matrix(@red).row_vectors
     cluster_index = find_cluster_index(m, cluster_center)
     for x in 0...w
       for y in 0...h
@@ -149,11 +148,10 @@ module Generator
         j = x + y * w
         v = m.row(j)
         c_index = cluster_index[j, 0]
-        neighbors = cluster_points[c_index]
-        nn = neighbors.row_vectors.min_by { |u|
+        nn = cluster_points[c_index].min_by { |u|
           feature_distance(u, v)
         }
-        pos = m_red_vectors.index(nn)
+        pos = red_vectors.index(nn)
         img[x, y] = @green[pos % @red.width, pos / @red.width]
       end
     end

@@ -171,7 +171,7 @@ begin
     print "\nRetry."
     raise "INTERACT"
   }
-  srand(0)
+
   puts "Start Train..."
   t = Time.now
   cluster_center, cluster_points = train(red, green)
@@ -182,21 +182,23 @@ begin
   puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
 
   puts "Start convert image..."
+  threads = $config["convert"]["threads"]
+  puts "Work in #{threads} threads."
   t = Time.now
-  imgs = Parallel.map((x_split * y_split).times.to_a, in_threads: 4) do |k|
+  imgs = Parallel.map((x_split * y_split).times.to_a, in_threads: threads) do |k|
+    puts "[%s] Worker %02d : Start." % [Time.now.strftime("%X"), k]
     i, j = k / y_split, k % y_split
     img = image.crop(i * w, j * h, w, h)
     convert!(img, cluster_center, cluster_points)
-    puts "Convert slice #{i * y_split + j + 1} / #{x_split * y_split}."
-    img
+    new_image.compose!(img, i * w, j * h)
+    new_image.save(green_4x4)
+    puts "[%s] Worker %02d : Done." % [Time.now.strftime("%X"), k]
   end
-  puts "\e[100DConvert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
+  puts "Convert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
   puts "Save to #{green_4x4}."
   imgs.each_with_index { |img, k|
     i, j = k / y_split, k % y_split
-    new_image.compose!(img, i * w, j * h)
   }
-  new_image.save(green_4x4)
 rescue Exception => e
   retry if e.message == "INTERACT"
 end

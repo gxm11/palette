@@ -9,7 +9,7 @@
             "command": [
                 "bundle install --local &&",
                 "del palette.json &&",
-                "ocra --no-autoload --output palette.exe main.rb &&",
+                "ocra --no-autoload --no-enc --output palette.exe main.rb &&",
                 "palette"
             ],
             "problemMatcher": []

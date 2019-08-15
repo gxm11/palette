@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # encoding: utf-8
 
 require "chunky_png"
@@ -9,7 +10,7 @@ require "parallel"
 Path_Config = ARGV[0] || "./palette.json"
 
 begin
-  puts "Load configures from #{Path_Config}"
+  puts "Load configures from %s." % Path_Config
   $config = JSON.load(File.read(Path_Config))
 rescue
   data = {
@@ -29,7 +30,7 @@ rescue
   File.open(Path_Config, "w") { |f|
     f << JSON.pretty_generate(data)
   }
-  puts "Create template config file in #{Path_Config} ."
+  puts "Create template config file in %s." % Path_Config
   exit()
 end
 
@@ -188,7 +189,7 @@ begin
   w, h = image.width / x_split, image.height / y_split
   new_image = ChunkyPNG::Image.new(image.width, image.height)
 
-  puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
+  puts "Find %d clusters in %.2f s." % [cluster_points.keys.size, Time.now - t]
   # Start Convert Images
   puts "Start convert image..."
   if File.exist?("debug")
@@ -201,23 +202,23 @@ begin
   parallel_method = Process.respond_to?(:fork) ? :in_processes : :in_threads
 
   # Use Parallel Threads / Processes
-  puts "Parallel #{parallel_method} => #{threads}."
+  puts "Parallel %s => %d." % [parallel_method, threads]
   t = Time.now
   imgs = Parallel.map((x_split * y_split).times.to_a, parallel_method => threads) do |k|
     i, j = k / y_split, k % y_split
     puts "[%s] Worker %d : Covert slice (%d, %d)." % [Time.now.strftime("%X"), Parallel.worker_number, i, j]
     img = image.crop(i * w, j * h, w, h)
     convert!(img, cluster_center, cluster_points)
-    img.save("debug/#{i}_#{j}.png")
+    img.save("debug/%d_%d.png" % [i, j])
     img
   end
-  puts "Convert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
+  puts "Convert %d slices in %.2f s." % [x_split * y_split, Time.now - t]
   imgs.each_with_index { |img, k|
     i, j = k / y_split, k % y_split
     new_image.compose!(img, i * w, j * h)
   }
   # Finished
-  puts "Save to #{green_4x4}."
+  puts "Save to %s." % green_4x4
   new_image.save(green_4x4)
 rescue Exception => e
   # Catch Ctrl+C to retry training and generating

@@ -8,7 +8,7 @@ ocra --debug-extract --output palette.exe main.rb
 
 # How to use
 ## Windows
-请下载 [palette.exe](https://github.com/gxm11/palette/releases/download/v0.4/palette.exe)，放置在主目录下执行。
+请下载 [palette.exe](https://github.com/gxm11/palette/releases/latest/download/palette.exe)，放置在主目录下执行。
 1. 配置文件`palette.json`已经存在于工程主目录中，程序会读取配置开始执行。
 2. 若同目录下没有配置文件`palette.json`，程序会创建此文件并退出，请修改后再次执行。
 3. 在运行过程中，每处理一份子图，都会保存到`debug`文件夹里，方便随时查看。

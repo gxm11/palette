@@ -22,7 +22,6 @@ rescue
     convert: {
       from: "red_4x4.png", to: "green_4x4.png",
       x_split: 4, y_split: 4,
-      threads: 4,
     },
     version: "v0.4",
     author: "guoxiaomi",
@@ -198,13 +197,17 @@ begin
     FileUtils.mkdir("debug")
   end
 
-  threads = $config["convert"]["threads"] || 4
-  parallel_method = Process.respond_to?(:fork) ? :in_processes : :in_threads
-
+  parallel_config = {}
+  if $config["convert"]["threads"]
+    if Process.respond_to?(:fork)
+      parallel_config[:in_processes] = $config["convert"]["threads"]
+    else
+      parallel_config[:in_threads] = $config["convert"]["threads"]
+    end
+  end
   # Use Parallel Threads / Processes
-  puts "Parallel %s => %d." % [parallel_method, threads]
   t = Time.now
-  imgs = Parallel.map((x_split * y_split).times.to_a, parallel_method => threads) do |k|
+  imgs = Parallel.map((x_split * y_split).times.to_a, parallel_config) do |k|
     i, j = k / y_split, k % y_split
     puts "[%s] Worker %d : Covert slice (%d, %d)." % [Time.now.strftime("%X"), Parallel.worker_number, i, j]
     img = image.crop(i * w, j * h, w, h)

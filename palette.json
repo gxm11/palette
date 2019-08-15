@@ -18,8 +18,7 @@
     "from": "red_4x4.png",
     "to": "green_4x4.png",
     "x_split": 4,
-    "y_split": 4,
-    "threads": 4
+    "y_split": 4
   },
   "version": "v0.4",
   "author": "guoxiaomi"

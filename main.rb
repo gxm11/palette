@@ -6,6 +6,10 @@ require "matrix"
 require "fileutils"
 require "json"
 require "parallel"
+# ---------------------------------------------------------
+# Version
+# ---------------------------------------------------------
+Version = "0.4.1"
 
 Path_Config = ARGV[0] || "./palette.json"
 
@@ -23,7 +27,7 @@ rescue
       from: "red_4x4.png", to: "green_4x4.png",
       x_split: 4, y_split: 4,
     },
-    version: "v0.4",
+    version: Version,
     author: "guoxiaomi",
   }
   File.open(Path_Config, "w") { |f|

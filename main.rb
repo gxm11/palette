@@ -6,8 +6,11 @@ require "fileutils"
 require "json"
 require "parallel"
 
+Path_Config = ARGV[0] || "./palette.json"
+
 begin
-  $config = JSON.load(File.read("./palette.json"))
+  puts "Load configures from #{Path_Config}"
+  $config = JSON.load(File.read(Path_Config))
 rescue
   data = {
     train: {
@@ -23,10 +26,10 @@ rescue
     version: "v0.4",
     author: "guoxiaomi",
   }
-  File.open("./palette.json", "w") { |f|
+  File.open(Path_Config, "w") { |f|
     f << JSON.pretty_generate(data)
   }
-  puts "Please change configs in palette.json"
+  puts "Create template config file in #{Path_Config} ."
   exit()
 end
 
@@ -201,12 +204,11 @@ begin
   puts "Parallel #{parallel_method} => #{threads}."
   t = Time.now
   imgs = Parallel.map((x_split * y_split).times.to_a, parallel_method => threads) do |k|
-    puts "[%s] Worker %02d : Start." % [Time.now.strftime("%X"), k]
     i, j = k / y_split, k % y_split
+    puts "[%s] Worker %d : Covert slice (%d, %d)." % [Time.now.strftime("%X"), Parallel.worker_number, i, j]
     img = image.crop(i * w, j * h, w, h)
     convert!(img, cluster_center, cluster_points)
     img.save("debug/#{i}_#{j}.png")
-    puts "[%s] Worker %02d : Done." % [Time.now.strftime("%X"), k]
     img
   end
   puts "Convert #{x_split * y_split} slices in %.2f s." % (Time.now - t)

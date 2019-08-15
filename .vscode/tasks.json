@@ -7,7 +7,10 @@
             "label": "build",
             "type": "shell",
             "command": [
-                "bundle install --local && del palette.json && ocra --output palette.exe --no-autoload main.rb && palette"
+                "bundle install --local &&",
+                "del palette.json &&",
+                "ocra --no-autoload --output palette.exe main.rb &&",
+                "palette"
             ],
             "problemMatcher": []
         }

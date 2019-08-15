@@ -20,5 +20,7 @@
     "x_split": 4,
     "y_split": 4,
     "threads": 4
-  }
+  },
+  "version": "v0.4",
+  "author": "guoxiaomi"
 }

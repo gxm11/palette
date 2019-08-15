@@ -20,6 +20,8 @@ rescue
       x_split: 4, y_split: 4,
       threads: 4,
     },
+    version: "v0.4",
+    author: "guoxiaomi",
   }
   File.open("./palette.json", "w") { |f|
     f << JSON.pretty_generate(data)
@@ -28,7 +30,7 @@ rescue
   exit()
 end
 
-module Generator
+module Palette
   # Tuning Constants
   Feature_Weights = "xyrgba".split("").collect { |k|
     $config["train"]["weights"][k]
@@ -36,6 +38,7 @@ module Generator
 
   Max_Cluster_Number = $config["train"]["max_cluster_number"]
   Train_Episodes = $config["train"]["episodes"]
+  Path_Clusters = $config["train"]["cluster"]
 
   # Fixed Constants
   Feature_Number = 6
@@ -53,8 +56,8 @@ module Generator
       cluster_center = find_next_cluster(m_red, cluster_index)
     end
     cluster_index = find_cluster_index(m_red, cluster_center)
-    if $config["train"]["cluster"]
-      draw_cluster_images(cluster_index, $config["train"]["cluster"])
+    if Path_Clusters
+      draw_cluster_images(cluster_index, Path_Clusters)
     end
     # cluster points is a hash: { c_index => array of vectors }
     cluster_points = {}
@@ -163,17 +166,18 @@ module Generator
   end
 end
 
-include Generator
+include Palette
 red, green = $config["train"]["from"], $config["train"]["to"]
 red_4x4, green_4x4 = $config["convert"]["from"], $config["convert"]["to"]
 x_split, y_split = $config["convert"]["x_split"], $config["convert"]["y_split"]
 
 begin
+  # Catch Ctrl+C to retry training and generating
   trap("INT") {
     print "\nRetry."
     raise "INTERACT"
   }
-
+  # Learning clusters
   puts "Start Train..."
   t = Time.now
   cluster_center, cluster_points = train(red, green)
@@ -182,25 +186,38 @@ begin
   new_image = ChunkyPNG::Image.new(image.width, image.height)
 
   puts "Find #{cluster_points.keys.size} clusters in %.2f s." % (Time.now - t)
-
+  # Start Convert Images
   puts "Start convert image..."
+  if File.exist?("debug")
+    FileUtils.rm(Dir.glob("debug/*"))
+  else
+    FileUtils.mkdir("debug")
+  end
+
   threads = $config["convert"]["threads"] || 4
-  puts "Work in #{threads} threads."
+  parallel_method = Process.respond_to?(:fork) ? :in_processes : :in_threads
+
+  # Use Parallel Threads / Processes
+  puts "Parallel #{parallel_method} => #{threads}."
   t = Time.now
-  imgs = Parallel.map((x_split * y_split).times.to_a, in_threads: threads) do |k|
+  imgs = Parallel.map((x_split * y_split).times.to_a, parallel_method => threads) do |k|
     puts "[%s] Worker %02d : Start." % [Time.now.strftime("%X"), k]
     i, j = k / y_split, k % y_split
     img = image.crop(i * w, j * h, w, h)
     convert!(img, cluster_center, cluster_points)
-    new_image.compose!(img, i * w, j * h)
-    new_image.save(green_4x4)
+    img.save("debug/#{i}_#{j}.png")
     puts "[%s] Worker %02d : Done." % [Time.now.strftime("%X"), k]
+    img
   end
   puts "Convert #{x_split * y_split} slices in %.2f s." % (Time.now - t)
-  puts "Save to #{green_4x4}."
   imgs.each_with_index { |img, k|
     i, j = k / y_split, k % y_split
+    new_image.compose!(img, i * w, j * h)
   }
+  # Finished
+  puts "Save to #{green_4x4}."
+  new_image.save(green_4x4)
 rescue Exception => e
+  # Catch Ctrl+C to retry training and generating
   retry if e.message == "INTERACT"
 end

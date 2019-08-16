@@ -10,6 +10,7 @@
                 "bundle install --local &&",
                 "del palette.json &&",
                 "ocra --no-autoload --no-enc --output palette.exe main.rb &&",
+                "set PATH=C:\\Windows\\System32 &&",
                 "palette"
             ],
             "problemMatcher": []

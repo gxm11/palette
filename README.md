@@ -3,7 +3,7 @@
 
 程序由 ocra 打包成 exe 可执行文件。
 ```
-ocra --debug-extract --output palette.exe main.rb
+ocra --no-autoload --no-enc --output palette.exe main.rb
 ```
 
 # How to use

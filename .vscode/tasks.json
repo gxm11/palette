@@ -13,7 +13,11 @@
                 "set PATH=C:\\Windows\\System32 &&",
                 "palette"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
